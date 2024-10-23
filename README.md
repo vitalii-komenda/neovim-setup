@@ -1,5 +1,7 @@
 # neovim-setup
 
+The setup is for ts, jsx, go development
+
 Terminal WezTerm with theme https://github.com/dracula/wezterm
 
 ## Plugins:
