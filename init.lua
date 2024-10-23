@@ -265,6 +265,16 @@ require("lazy").setup({
 	-- Use `opts = {}` to force a plugin to be loaded.
 	--
 	{
+		"nvim-neo-tree/neo-tree.nvim",
+		branch = "v3.x",
+		dependencies = {
+			"nvim-lua/plenary.nvim",
+			"nvim-tree/nvim-web-devicons", -- not strictly required, but recommended
+			"MunifTanjim/nui.nvim",
+			-- "3rd/image.nvim", -- Optional image support in preview window: See `# Preview Mode` for more information
+		},
+	},
+	{
 		"CopilotC-Nvim/CopilotChat.nvim",
 		branch = "canary",
 		dependencies = {
@@ -279,6 +289,23 @@ require("lazy").setup({
 		-- See Commands section for default commands if you want to lazy load on them
 	},
 	"yuezk/vim-js",
+	{
+		"kristijanhusak/vim-dadbod-ui",
+		dependencies = {
+			{ "tpope/vim-dadbod", lazy = true },
+			{ "kristijanhusak/vim-dadbod-completion", ft = { "sql", "mysql", "plsql" }, lazy = true }, -- Optional
+		},
+		cmd = {
+			"DBUI",
+			"DBUIToggle",
+			"DBUIAddConnection",
+			"DBUIFindBuffer",
+		},
+		init = function()
+			-- Your DBUI configuration
+			vim.g.db_ui_use_nerd_fonts = 1
+		end,
+	},
 
 	{
 		"pmizio/typescript-tools.nvim",
@@ -290,20 +317,18 @@ require("lazy").setup({
 	--    require('gitsigns').setup({ ... })
 	--
 	-- See `:help gitsigns` to understand what the configuration keys do
-	{ -- Adds git related signs to the gutter, as well as utilities for managing changes
-		"lewis6991/gitsigns.nvim",
-		opts = {
-			signs = {
-				add = { text = "+" },
-				change = { text = "~" },
-				delete = { text = "_" },
-				topdelete = { text = "‾" },
-				changedelete = { text = "~" },
-			},
-		},
-	},
+
 	{ "akinsho/toggleterm.nvim", version = "*", config = true },
 	"maxmellon/vim-jsx-pretty",
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "echasnovski/mini.nvim" }, -- if you use the mini.nvim suite
+		-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.icons' }, -- if you use standalone mini plugins
+		-- dependencies = { 'nvim-treesitter/nvim-treesitter', 'nvim-tree/nvim-web-devicons' }, -- if you prefer nvim-web-devicons
+		---@module 'render-markdown'
+		---@type render.md.UserConfig
+		opts = {},
+	},
 	"HerringtonDarkholme/yats.vim",
 	{
 		"nvim-telescope/telescope-file-browser.nvim",
@@ -313,6 +338,60 @@ require("lazy").setup({
 	"sindrets/diffview.nvim",
 	"nvim-lua/plenary.nvim",
 	"nvim-pack/nvim-spectre",
+	{
+		"mfussenegger/nvim-dap",
+		dependencies = {
+			"leoluz/nvim-dap-go",
+		},
+		config = function()
+			require("dap-go").setup({
+				-- Customize as needed
+				dap_configurations = {
+					{
+						type = "go",
+						name = "Debug",
+						request = "launch",
+						program = "${file}",
+					},
+				},
+				delve = {
+					path = "dlv",
+					initialize_timeout_sec = 20,
+					port = "${port}",
+				},
+			})
+
+			vim.keymap.set("n", "<Leader>dc", require("dap").continue, { desc = "Debug: Start/Continue" })
+			vim.keymap.set("n", "<Leader>do", require("dap").step_over, { desc = "Debug: Step Over" })
+			vim.keymap.set("n", "<Leader>di", require("dap").step_into, { desc = "Debug: Step Into" })
+			vim.keymap.set("n", "<Leader>dt", require("dap").step_out, { desc = "Debug: Step Out" })
+			vim.keymap.set("n", "<Leader>b", require("dap").toggle_breakpoint, { desc = "Debug: Toggle Breakpoint" })
+			vim.keymap.set("n", "<Leader>B", function()
+				require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
+			end, { desc = "Debug: Set Breakpoint" })
+			-- Add key mappings here (see step 4)
+		end,
+	},
+	"nvim-neotest/nvim-nio",
+	{
+		"rcarriga/nvim-dap-ui",
+		dependencies = { "mfussenegger/nvim-dap" },
+		config = function()
+			require("dapui").setup()
+			-- Automatically open dap-ui when debugging starts
+			local dap, dapui = require("dap"), require("dapui")
+			dap.listeners.after.event_initialized["dapui_config"] = function()
+				dapui.open()
+			end
+			dap.listeners.before.event_terminated["dapui_config"] = function()
+				dapui.close()
+			end
+			dap.listeners.before.event_exited["dapui_config"] = function()
+				dapui.close()
+			end
+		end,
+	},
+
 	{ "github/copilot.vim" },
 	-- NOTE: Plugins can also be configured to run Lua code when they are loaded.
 	--
@@ -684,7 +763,7 @@ require("lazy").setup({
 			--        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
 			local servers = {
 				clangd = {},
-				gopls = {},
+				gopls = { goVersion = "1.23.2" },
 				-- pyright = {},
 				-- rust_analyzer = {},
 				-- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
